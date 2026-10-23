@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>懂车帝隐私号 · 线索详情页交互原型</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:linear-gradient(145deg,#f5f5f0 0%,#ececea 50%,#e4e4e0 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+  display:flex;justify-content:center;align-items:center;
+  min-height:100vh;padding:40px 20px;
+}
+
+.phone{
+  width:375px;height:812px;position:relative;
+  border-radius:36px;overflow:hidden;
+  box-shadow:0 24px 72px rgba(0,0,0,.13),0 0 0 1px rgba(0,0,0,.06);
+  background:#fff;flex-shrink:0;
+}
+.phone img{width:375px;height:auto;display:block}
+
+/* ===== 列表页提示 ===== */
+.list-hint{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  font-size:12px;color:#888;white-space:nowrap;
+  background:rgba(255,255,255,.88);padding:7px 18px;border-radius:20px;
+  z-index:5;pointer-events:none;
+  backdrop-filter:blur(4px);
+}
+
+/* ===== 提示条样式已移除（新图片自带提醒） ===== */
+
+/* ===== 虚拟号标签样式已移除 ===== */
+
+/* ===== 遮罩 ===== */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:10;display:none}
+.overlay.show{display:block}
+
+/* ===== Bottom Sheet ===== */
+.sheet{
+  position:absolute;bottom:0;left:0;right:0;
+  background:#fff;border-radius:20px 20px 0 0;
+  padding:14px 20px 46px;
+  z-index:20;display:none;max-height:82%;overflow-y:auto;
+}
+.sheet.show{display:block;animation:sheetUp .32s cubic-bezier(.32,.72,0,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+.sheet .handle{width:36px;height:4px;background:#D1D1D6;border-radius:2px;margin:0 auto 14px}
+.sheet .title{font-size:18px;font-weight:600;color:#1A1A1A;text-align:center;margin-bottom:20px}
+.sheet .body{font-size:15px;color:#3A3A3C;line-height:1.85;margin-bottom:22px;padding:0 2px}
+.sheet .body b{color:#1A1A1A}
+.sheet .body .warn{color:#D4880A;font-weight:600}
+.sheet .body .link{color:#0042FF;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+/* ===== 按钮 ===== */
+.btn{
+  height:44px;border-radius:12px;border:none;
+  font-size:15px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:opacity .15s;
+}
+.btn:active{opacity:.7}
+.btn-primary{background:#0042FF;color:#fff;flex:1}
+.btn-ghost{background:#F2F3F5;color:#1A1A1A;flex:1}
+.btn-full{width:100%}
+.btn-row{display:flex;gap:10px}
+
+/* ===== 输入框 ===== */
+.field-label{font-size:13px;color:#86868B;margin-bottom:7px;display:block}
+.field-input{
+  width:100%;height:44px;border:1.5px solid #E5E5EA;border-radius:12px;
+  padding:0 14px;font-size:15px;font-family:inherit;outline:none;
+  background:#FAFAFA;transition:border-color .2s,background .2s;
+  margin-bottom:16px;
+}
+.field-input:focus{border-color:#0042FF;background:#fff}
+.field-input::placeholder{color:#C7C7CC}
+.field-input.err{border-color:#FF3B30}
+
+/* ===== 重复线索选项 ===== */
+.dup-opt{
+  border:1.5px solid #E5E5EA;border-radius:14px;
+  padding:12px 14px;margin-bottom:10px;
+  cursor:pointer;display:flex;align-items:flex-start;gap:12px;
+  transition:border-color .2s,background .2s;
+  position:relative;
+}
+.dup-opt:active{background:#F9F9F9}
+.dup-opt.sel{border-color:#0042FF;background:rgba(0,66,255,.03)}
+.dup-opt .radio{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid #D1D1D6;flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s;
+}
+.dup-opt.sel .radio{border-color:#0042FF}
+.dup-opt.sel .radio::after{content:'';width:11px;height:11px;background:#0042FF;border-radius:50%}
+.dup-opt .info{flex:1;min-width:0}
+.dup-opt .name{
+  font-size:14px;font-weight:600;color:#1A1A1A;
+  margin-bottom:3px;display:flex;align-items:center;gap:6px;
+}
+.dup-opt .cur-tag{
+  font-size:10px;color:#0042FF;background:rgba(0,66,255,.08);
+  padding:1px 6px;border-radius:3px;font-weight:500;flex-shrink:0;
+}
+.dup-opt .meta{font-size:11px;color:#86868B;line-height:1.5}
+.dup-opt .keep-tag{
+  position:absolute;top:10px;right:12px;
+  font-size:10px;color:#0042FF;font-weight:600;
+  display:none;letter-spacing:.3px;
+}
+.dup-opt.sel .keep-tag{display:block}
+
+.dup-tip{
+  font-size:12px;color:#86868B;line-height:1.55;
+  margin:0 0 18px;padding:10px 12px;
+  background:#F7F7F8;border-radius:10px;
+}
+
+/* ===== Toast ===== */
+.toast{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(.9);
+  background:rgba(30,30,30,.82);color:#fff;
+  padding:13px 28px;border-radius:14px;
+  font-size:14px;font-weight:500;
+  z-index:100;opacity:0;
+  transition:all .25s ease;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* 页面切换 */
+#phoneDetail{display:none}
+</style>
+</head>
+<body>
+
+<!-- ========== 线索列表页 ========== -->
+<div class="phone" id="phoneList">
+  <img src="线索列表页.png" alt="线索列表页" />
+</div>
+
+<!-- ========== 线索详情页 ========== -->
+<div class="phone" id="phoneDetail">
+  <img src="线索详情页（带标签）.png" alt="线索详情页" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:scale(1.02)" />
+
+  <!-- 顶部1/3热区：点击唤起更新手机号弹窗 -->
+  <div id="topHotArea" style="position:absolute;top:0;left:0;right:0;height:33.33%;z-index:4;cursor:pointer;" onclick="openUpdateFromArea()"></div>
+  <!-- 中部1/3热区：点击唤起温馨提醒弹窗 -->
+  <div id="midHotArea" style="position:absolute;top:33.33%;left:0;right:0;height:33.33%;z-index:4;cursor:pointer;" onclick="reopenWarmFromArea()"></div>
+
+  <!-- 虚拟号标签已移除（新图片自带提醒） -->
+
+  <!-- 遮罩 -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- 弹窗 1：温馨提醒 -->
+  <div class="sheet" id="sheetWarm">
+    <div class="handle"></div>
+    <div class="title">温馨提醒</div>
+    <div class="body">
+      该客户手机号 <b>13488886666</b> 为虚拟号，有效期剩余 <span class="warn">13 天 6 小时</span>。到期后将无法通过该号码联系到客户。<br><br>
+      请尽快联系客户获取真实手机号，并<span class="link" onclick="openUpdate()" style="white-space:nowrap">更新号码</span>。否则后续试驾/转订单等操作将无法进行。
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="closeWarm()">我知道了</button>
+  </div>
+
+  <!-- 弹窗 2：更新手机号 -->
+  <div class="sheet" id="sheetUpdate">
+    <div class="handle"></div>
+    <div class="title">更新线索手机号</div>
+    <label class="field-label">客户真实手机号</label>
+    <input class="field-input" id="phoneInput" type="tel" placeholder="请输入" maxlength="11" inputmode="numeric" />
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeUpdate()">取消</button>
+      <button class="btn btn-primary" onclick="showConfirm()">下一步</button>
+    </div>
+  </div>
+
+  <!-- 弹窗 2.5：确认手机号 -->
+  <div class="sheet" id="sheetConfirm">
+    <div class="handle"></div>
+    <div class="title">确认更新手机号</div>
+    <div class="body" style="text-align:center;margin-bottom:24px">
+      您即将把线索手机号更新为 <b id="confirmPhone" style="font-size:20px;color:#0042FF"></b>，更新后无法撤回，请确认号码无误。
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeConfirm()">上一步</button>
+      <button class="btn btn-primary" onclick="doSave()">确认更新</button>
+    </div>
+  </div>
+
+  <!-- 弹窗 3：重复线索 -->
+  <div class="sheet" id="sheetDup">
+    <div class="handle"></div>
+    <div class="title">发现重复线索</div>
+    <div class="body" style="margin-bottom:14px;font-size:14px;line-height:1.75">
+      该手机号在本店有未闭环线索，请选择保留哪一条。保留的线索将正常跟进，未选择的线索将自动作废/战败。
+    </div>
+    <div class="dup-opt sel" id="opt1" onclick="pick('opt1')">
+      <div class="radio"></div>
+      <div class="info">
+        <div class="name">猪猪侠 <span class="cur-tag">当前线索</span></div>
+        <div class="meta">跟进顾问：陈运林</div>
+        <div class="meta">线索来源：懂车帝</div>
+        <div class="meta">最近跟进：10/22 16:13</div>
+      </div>
+      <div class="keep-tag">保留</div>
+    </div>
+    <div class="dup-opt" id="opt2" onclick="pick('opt2')">
+      <div class="radio"></div>
+      <div class="info">
+        <div class="name">张三</div>
+        <div class="meta">跟进顾问：李晓明</div>
+        <div class="meta">线索来源：店端线下</div>
+        <div class="meta">最近跟进：10/15 10:30</div>
+      </div>
+      <div class="keep-tag">保留</div>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeDup()">取消</button>
+      <button class="btn btn-primary" onclick="doConfirm()">确定</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">手机号已更新成功</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const phoneList=$('phoneList'), phoneDetail=$('phoneDetail');
+const topHotArea=$('topHotArea'), midHotArea=$('midHotArea');
+const overlay=$('overlay');
+const sheetW=$('sheetWarm'), sheetU=$('sheetUpdate'), sheetC=$('sheetConfirm'), sheetD=$('sheetDup');
+const input=$('phoneInput'), confirmPhone=$('confirmPhone'), toast=$('toast');
+let isEntering=false;
+
+// —— 列表页 → 详情页 ——
+phoneList.addEventListener('click',()=>{
+  phoneList.style.display='none';
+  phoneDetail.style.display='block';
+  isEntering=true;
+  // 自动唤起温馨提醒
+  overlay.classList.add('show');
+  sheetW.classList.add('show');
+});
+
+// —— 关闭温馨提醒 ——
+function closeWarm(){
+  sheetW.classList.remove('show');
+  overlay.classList.remove('show');
+  isEntering=false;
+}
+
+// —— 重新唤起温馨提醒（底部热区） ——
+function reopenWarmFromArea(){
+  if(isEntering){isEntering=false;return;}
+  if(sheetW.classList.contains('show')) return;
+  overlay.classList.add('show');
+  sheetW.classList.add('show');
+}
+
+// —— 打开更新弹窗（顶部热区） ——
+function openUpdateFromArea(){
+  if(isEntering){isEntering=false;return;}
+  if(sheetU.classList.contains('show')) return;
+  if(sheetC.classList.contains('show')) return;
+  overlay.classList.add('show');
+  sheetU.classList.add('show');
+  setTimeout(()=>input.focus(),320);
+}
+
+// —— 打开更新弹窗（温馨提醒内链接） ——
+function openUpdate(){
+  sheetW.classList.remove('show');
+  overlay.classList.add('show');
+  sheetU.classList.add('show');
+  setTimeout(()=>input.focus(),320);
+}
+
+// —— 关闭更新弹窗 ——
+function closeUpdate(){
+  sheetU.classList.remove('show');
+  overlay.classList.remove('show');
+  input.classList.remove('err');
+}
+
+// —— 显示确认弹窗 ——
+function showConfirm(){
+  const v=input.value.trim();
+  if(!/^\d{11}$/.test(v)){
+    input.classList.add('err');
+    input.placeholder='请输入正确的 11 位手机号';
+    setTimeout(()=>{input.classList.remove('err');input.placeholder='请输入'},2000);
+    return;
+  }
+  confirmPhone.textContent=v;
+  sheetU.classList.remove('show');
+  sheetC.classList.add('show');
+}
+
+// —— 关闭确认弹窗（返回上一步） ——
+function closeConfirm(){
+  sheetC.classList.remove('show');
+  sheetU.classList.add('show');
+}
+
+// —— 保存（校验重复线索） ——
+function doSave(){
+  sheetC.classList.remove('show');
+  sheetD.classList.add('show');
+}
+
+// —— 选择线索 ——
+function pick(id){
+  document.querySelectorAll('.dup-opt').forEach(e=>e.classList.remove('sel'));
+  $(id).classList.add('sel');
+}
+
+// —— 关闭重复弹窗 ——
+function closeDup(){
+  sheetD.classList.remove('show');
+  overlay.classList.remove('show');
+}
+
+// —— 确认完成 ——
+function doConfirm(){
+  sheetD.classList.remove('show');
+  overlay.classList.remove('show');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2200);
+}
+
+// —— 点击遮罩关闭当前弹窗 ——
+overlay.addEventListener('click',()=>{
+  if(sheetW.classList.contains('show')) closeWarm();
+  else if(sheetU.classList.contains('show')) closeUpdate();
+  else if(sheetC.classList.contains('show')) closeConfirm();
+  else if(sheetD.classList.contains('show')) closeDup();
+});
+</script>
+</body>
+</html>
